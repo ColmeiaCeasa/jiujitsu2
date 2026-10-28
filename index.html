@@ -15,31 +15,31 @@
                     colors: {
                         jjdark: '#0f172a',
                         jjcard: '#1e293b',
-                        jjaccent: '#f59e0b', // Amber
-                        jjgreen: '#10b981',  // Emerald
-                        jjred: '#ef4444'     // Red
+                        jjaccent: '#f59e0b',
+                        jjgreen: '#10b981',
+                        jjred: '#ef4444'
                     }
                 }
             }
         }
     </script>
     <style>
-        /* Custom scrollbar and touch optimizations */
-        body {
-            -webkit-tap-highlight-color: transparent;
-        }
+        body { -webkit-tap-highlight-color: transparent; }
         @media print {
             body { background: white !important; color: black !important; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; max-width: none !important; background: white !important; border: none !important; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-size: 11px; color: black !important; }
+            th { background-color: #f1f5f9 !important; }
         }
         .print-only { display: none; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 h-full flex flex-col font-sans">
 
-    <!-- Toast Notification Container -->
+    <!-- Toast Container -->
     <div id="toast-container" class="fixed top-4 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- Top Header -->
@@ -49,13 +49,16 @@
                 <i class="fa-solid fa-hand-fist"></i>
             </div>
             <div>
-                <h1 class="font-bold text-base leading-tight">LA Controle Jiu-Jitsu</h1>
-                <p class="text-xs text-emerald-400" id="sync-status"><i class="fa-solid fa-cloud"></i> Conectado via Apps Script</p>
+                <h1 class="font-bold text-base leading-tight">TESTE</h1>
+                <p class="text-xs text-amber-400" id="sync-status"><i class="fa-solid fa-sync fa-spin"></i> Sincronizando...</p>
             </div>
         </div>
+        <button onclick="loadDataFromSheets()" title="Atualizar Dados" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 border border-slate-700">
+            <i class="fa-solid fa-rotate text-sm"></i>
+        </button>
     </header>
 
-    <!-- Main Content Area (Scrollable) -->
+    <!-- Main Content -->
     <main class="flex-1 overflow-y-auto pb-24 p-4 max-w-md mx-auto w-full">
 
         <!-- TAB 1: LANÇAR AULA -->
@@ -87,7 +90,6 @@
                 </div>
             </div>
 
-            <!-- Attendance Controls & List -->
             <div class="space-y-3">
                 <div class="flex items-center justify-between px-1">
                     <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider" id="attendance-counter">Alunos (0)</span>
@@ -98,7 +100,6 @@
                 </div>
 
                 <div id="attendance-list" class="space-y-2">
-                    <!-- Dynamic Student Check-in Cards -->
                     <div class="text-center py-8 text-slate-500 text-sm">Carregando alunos...</div>
                 </div>
 
@@ -119,7 +120,6 @@
                 </button>
             </div>
 
-            <!-- Search and Filter -->
             <div class="flex gap-2">
                 <div class="relative flex-1">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-500 text-xs"></i>
@@ -127,62 +127,64 @@
                 </div>
             </div>
 
-            <div id="students-list" class="space-y-2">
-                <!-- Dynamic Students -->
-            </div>
+            <div id="students-list" class="space-y-2"></div>
         </section>
 
-        <!-- TAB 3: CADASTROS (Professores, Categorias, Faixas) -->
+        <!-- TAB 3: CADASTROS & EQUIPE -->
         <section id="tab-cadastros" class="tab-content hidden space-y-6">
             <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
                 <i class="fa-solid fa-address-book"></i> Cadastros & Equipe
             </h2>
 
-            <!-- Professors Management -->
+            <!-- Professores -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-chalkboard-user text-amber-400"></i> Professores</h3>
-                </div>
+                <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-chalkboard-user text-amber-400"></i> Professores</h3>
                 <form id="professor-form" onsubmit="addProfessor(event)" class="flex gap-2">
                     <input type="text" id="prof-name" placeholder="Nome do Professor" required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                    <select id="prof-belt" required class="bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                        <option value="Preta">Preta</option>
-                        <option value="Marrom">Marrom</option>
-                        <option value="Roxa">Roxa</option>
-                        <option value="Azul">Azul</option>
-                    </select>
+                    <select id="prof-belt" required class="bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"></select>
                     <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i></button>
                 </form>
                 <div id="professors-list" class="space-y-1.5 pt-2"></div>
             </div>
 
-            <!-- Categories Management -->
+            <!-- FAIXAS -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-tags text-amber-400"></i> Categorias</h3>
-                </div>
-                <form id="category-form" onsubmit="addCategory(event)" class="flex gap-2">
-                    <input type="text" id="cat-name" placeholder="Ex: Adulto, Infantil, Master" required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i></button>
-                </form>
-                <div id="categories-list" class="flex flex-wrap gap-1.5 pt-2"></div>
-            </div>
-
-            <!-- Belts Management -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
-                <div class="flex justify-between items-center">
-                    <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-medal text-amber-400"></i> Faixas</h3>
-                </div>
+                <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-medal text-amber-400"></i> Faixas</h3>
                 <form id="belt-form" onsubmit="addBelt(event)" class="flex gap-2">
-                    <input type="text" id="belt-name" placeholder="Ex: Branca, Azul, Roxa" required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
-                    <input type="color" id="belt-color" value="#ffffff" class="w-10 h-9 bg-slate-950 border border-slate-700 rounded-xl cursor-pointer p-1">
+                    <input type="text" id="belt-name" placeholder="Ex: Coral, Vermelha..." required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <input type="color" id="belt-color" value="#eab308" class="w-10 h-9 bg-slate-950 border border-slate-700 rounded-xl cursor-pointer p-1">
                     <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i></button>
                 </form>
                 <div id="belts-list" class="space-y-1.5 pt-2"></div>
             </div>
+
+            <!-- Categorias -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
+                <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-tags text-amber-400"></i> Categorias</h3>
+                <form id="category-form" onsubmit="addCategory(event)" class="flex gap-2">
+                    <input type="text" id="cat-name" placeholder="Ex: Adulto, Infantil" required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i></button>
+                </form>
+                <div id="categories-list" class="flex flex-wrap gap-1.5 pt-2"></div>
+            </div>
         </section>
 
-        <!-- TAB 4: RELATÓRIOS -->
+        <!-- TAB 4: GERENCIAR LANÇAMENTOS -->
+        <section id="tab-gerenciar" class="tab-content hidden space-y-4">
+            <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square"></i> Gerenciar Lançamentos
+            </h2>
+            <p class="text-xs text-slate-400">Visualize aulas passadas e exclua registros errados da planilha.</p>
+
+            <div class="flex gap-2">
+                <input type="date" id="filter-log-date" onchange="renderManageLogs()" class="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 flex-1 focus:outline-none focus:border-amber-500">
+                <button onclick="document.getElementById('filter-log-date').value=''; renderManageLogs();" class="bg-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs border border-slate-700">Limpar Data</button>
+            </div>
+
+            <div id="manage-logs-list" class="space-y-2"></div>
+        </section>
+
+        <!-- TAB 5: RELATÓRIOS -->
         <section id="tab-relatorios" class="tab-content hidden space-y-4">
             <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
                 <i class="fa-solid fa-chart-bar"></i> Relatórios de Frequência
@@ -207,7 +209,7 @@
                 </div>
                 <div class="flex gap-2 pt-2">
                     <button onclick="printReport()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold py-2.5 px-3 rounded-xl border border-slate-700 text-xs flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-file-pdf"></i> Salvar PDF / Imprimir
+                        <i class="fa-solid fa-file-pdf"></i> Salvar PDF / Imprimir Tabela
                     </button>
                 </div>
             </div>
@@ -220,7 +222,7 @@
 
     </main>
 
-    <!-- Student Modal (Add/Edit) -->
+    <!-- Student Modal -->
     <div id="student-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm space-y-4 shadow-2xl">
             <div class="flex justify-between items-center">
@@ -235,15 +237,11 @@
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-400 mb-1">Categoria</label>
-                    <select id="student-category" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
-                        <!-- options -->
-                    </select>
+                    <select id="student-category" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500"></select>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-400 mb-1">Faixa</label>
-                    <select id="student-belt" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
-                        <!-- options -->
-                    </select>
+                    <select id="student-belt" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500"></select>
                 </div>
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closeStudentModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs">Cancelar</button>
@@ -253,23 +251,27 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation Bar (Mobile Optimized) -->
+    <!-- Bottom Navigation -->
     <nav class="bg-slate-900 border-t border-slate-800 fixed bottom-0 left-0 right-0 z-40 no-print max-w-md mx-auto flex justify-around py-2 px-1 shadow-2xl">
         <button onclick="switchTab('lancar')" id="nav-lancar" class="flex flex-col items-center justify-center flex-1 py-1 text-amber-400 transition">
-            <i class="fa-solid fa-clipboard-user text-base mb-0.5"></i>
-            <span class="text-[10px] font-medium">Lançar</span>
+            <i class="fa-solid fa-clipboard-user text-sm mb-0.5"></i>
+            <span class="text-[9px] font-medium">Lançar</span>
         </button>
         <button onclick="switchTab('alunos')" id="nav-alunos" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 transition">
-            <i class="fa-solid fa-users text-base mb-0.5"></i>
-            <span class="text-[10px] font-medium">Alunos</span>
+            <i class="fa-solid fa-users text-sm mb-0.5"></i>
+            <span class="text-[9px] font-medium">Alunos</span>
         </button>
         <button onclick="switchTab('cadastros')" id="nav-cadastros" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 transition">
-            <i class="fa-solid fa-address-book text-base mb-0.5"></i>
-            <span class="text-[10px] font-medium">Equipe</span>
+            <i class="fa-solid fa-address-book text-sm mb-0.5"></i>
+            <span class="text-[9px] font-medium">Equipe</span>
+        </button>
+        <button onclick="switchTab('gerenciar')" id="nav-gerenciar" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 transition">
+            <i class="fa-solid fa-pen-to-square text-sm mb-0.5"></i>
+            <span class="text-[9px] font-medium">Editar</span>
         </button>
         <button onclick="switchTab('relatorios')" id="nav-relatorios" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 transition">
-            <i class="fa-solid fa-chart-bar text-base mb-0.5"></i>
-            <span class="text-[10px] font-medium">Relatórios</span>
+            <i class="fa-solid fa-chart-bar text-sm mb-0.5"></i>
+            <span class="text-[9px] font-medium">Relatórios</span>
         </button>
     </nav>
 
@@ -277,21 +279,13 @@
         // =========================================================================
         // INSIRA A SUA URL DO GOOGLE APPS SCRIPT NA LINHA ABAIXO:
         // =========================================================================
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0UFLV_C4Y6nnAMzOIP2kQST6slUdbiGTVopPq_Igu6iiuhJxycHQPsxor0sm9iFRS/exec';
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygwI50ZXh0YsySsPFqvzxkuZNQVYOF181z4VELTV5ImUEOslDB3kR1UEfVnxI9r19n/exec';
 
-        // --- State Management ---
         let state = {
-            students: JSON.parse(localStorage.getItem('bjj_students')) || [
-                { id: '1', name: 'Carlos Silva', category: 'Adulto', belt: 'Azul' },
-                { id: '2', name: 'Mariana Souza', category: 'Adulto', belt: 'Roxa' },
-                { id: '3', name: 'João Pedro', category: 'Infantil', belt: 'Cinza' }
-            ],
-            professors: JSON.parse(localStorage.getItem('bjj_professors')) || [
-                { id: '1', name: 'Mestre Roberto', belt: 'Preta' },
-                { id: '2', name: 'Professor André', belt: 'Marrom' }
-            ],
-            categories: JSON.parse(localStorage.getItem('bjj_categories')) || ['Infantil', 'Juvenil', 'Adulto', 'Master'],
-            belts: JSON.parse(localStorage.getItem('bjj_belts')) || [
+            students: [],
+            professors: [],
+            categories: ['Infantil', 'Juvenil', 'Adulto', 'Master'],
+            belts: [
                 { name: 'Branca', color: '#ffffff' },
                 { name: 'Cinza', color: '#94a3b8' },
                 { name: 'Amarela', color: '#eab308' },
@@ -302,11 +296,10 @@
                 { name: 'Marrom', color: '#78350f' },
                 { name: 'Preta', color: '#0f172a' }
             ],
-            attendanceLogs: JSON.parse(localStorage.getItem('bjj_attendance')) || []
+            attendanceLogs: []
         };
 
-        // Save state to localStorage
-        function persist() {
+        function persistLocally() {
             localStorage.setItem('bjj_students', JSON.stringify(state.students));
             localStorage.setItem('bjj_professors', JSON.stringify(state.professors));
             localStorage.setItem('bjj_categories', JSON.stringify(state.categories));
@@ -314,7 +307,54 @@
             localStorage.setItem('bjj_attendance', JSON.stringify(state.attendanceLogs));
         }
 
-        // --- Toast Notifications ---
+        async function loadDataFromSheets() {
+            const statusEl = document.getElementById('sync-status');
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('SUA_URL_AQUI')) {
+                if (statusEl) statusEl.innerHTML = `<span class="text-amber-400"><i class="fa-solid fa-triangle-exclamation"></i> Configure a URL</span>`;
+                return;
+            }
+
+            if (statusEl) statusEl.innerHTML = `<span class="text-amber-400"><i class="fa-solid fa-sync fa-spin"></i> Sincronizando...</span>`;
+
+            try {
+                const response = await fetch(APPS_SCRIPT_URL);
+                const data = await response.json();
+
+                if (data) {
+                    if (data.students && data.students.length > 0) state.students = data.students;
+                    if (data.professors && data.professors.length > 0) state.professors = data.professors;
+                    if (data.belts && data.belts.length > 0) state.belts = data.belts;
+                    if (data.logs) state.attendanceLogs = data.logs;
+                    
+                    persistLocally();
+                    if (statusEl) statusEl.innerHTML = `<span class="text-emerald-400"><i class="fa-solid fa-cloud"></i> Sincronizado na Nuvem</span>`;
+                }
+            } catch (err) {
+                console.error("Erro ao sincronizar:", err);
+                state.students = JSON.parse(localStorage.getItem('bjj_students')) || state.students;
+                state.professors = JSON.parse(localStorage.getItem('bjj_professors')) || state.professors;
+                state.categories = JSON.parse(localStorage.getItem('bjj_categories')) || state.categories;
+                state.belts = JSON.parse(localStorage.getItem('bjj_belts')) || state.belts;
+                state.attendanceLogs = JSON.parse(localStorage.getItem('bjj_attendance')) || [];
+                if (statusEl) statusEl.innerHTML = `<span class="text-slate-400"><i class="fa-solid fa-database"></i> Modo Offline</span>`;
+            }
+            initLancarTab();
+        }
+
+        async function syncTableToSheets(actionName, payloadData) {
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('SUA_URL_AQUI')) return;
+            try {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: actionName, payload: payloadData })
+                });
+            } catch (e) {
+                console.error("Erro ao enviar para planilha:", e);
+            }
+        }
+
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -329,7 +369,6 @@
             }, 3000);
         }
 
-        // --- Navigation ---
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
@@ -346,26 +385,23 @@
 
             window.scrollTo(0, 0);
 
-            // Trigger specific tab initializers
             if (tabId === 'lancar') initLancarTab();
             if (tabId === 'alunos') renderStudentsList();
             if (tabId === 'cadastros') renderCadastros();
+            if (tabId === 'gerenciar') renderManageLogs();
             if (tabId === 'relatorios') initReportTab();
         }
 
-        // --- Tab 1: Lançar Aula ---
         function initLancarTab() {
             const dateInput = document.getElementById('class-date');
             if (!dateInput.value) {
                 dateInput.valueAsDate = new Date();
             }
 
-            // Populate Professors dropdown
             const profSelect = document.getElementById('class-professor');
             profSelect.innerHTML = '<option value="">Selecione o Professor...</option>' + 
                 state.professors.map(p => `<option value="${p.name}">${p.name} (${p.belt})</option>`).join('');
 
-            // Populate Category filter
             const catSelect = document.getElementById('class-filter-category');
             catSelect.innerHTML = '<option value="">Todas as Categorias</option>' + 
                 state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -373,7 +409,7 @@
             renderAttendanceList();
         }
 
-        let currentAttendanceMap = {}; // studentId -> boolean
+        let currentAttendanceMap = {};
 
         function renderAttendanceList() {
             const filterCat = document.getElementById('class-filter-category').value;
@@ -388,13 +424,13 @@
             }
 
             container.innerHTML = filteredStudents.map(s => {
-                const isPresent = currentAttendanceMap[s.id] !== undefined ? currentAttendanceMap[s.id] : true; // Default to present
+                const isPresent = currentAttendanceMap[s.id] !== undefined ? currentAttendanceMap[s.id] : true;
                 currentAttendanceMap[s.id] = isPresent;
                 const beltObj = state.belts.find(b => b.name === s.belt);
                 const beltColor = beltObj ? beltObj.color : '#ffffff';
 
                 return `
-                    <div onclick="toggleStudentAttendance('${s.id}')" id="card-${s.id}" class="flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${isPresent ? 'bg-slate-900 border-emerald-500/50 shadow-emerald-950/20 shadow-md' : 'bg-slate-900/50 border-slate-800 opacity-60'}">
+                    <div onclick="toggleStudentAttendance('${s.id}')" id="card-${s.id}" class="flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${isPresent ? 'bg-slate-900 border-emerald-500/50 shadow-md' : 'bg-slate-900/50 border-slate-800 opacity-60'}">
                         <div class="flex items-center gap-3">
                             <div class="w-3 h-10 rounded-full" style="background-color: ${beltColor};"></div>
                             <div>
@@ -416,7 +452,7 @@
             const isPresent = currentAttendanceMap[studentId];
             
             if (isPresent) {
-                card.className = "flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none bg-slate-900 border-emerald-500/50 shadow-emerald-950/20 shadow-md";
+                card.className = "flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none bg-slate-900 border-emerald-500/50 shadow-md";
                 card.querySelector('div:last-child').className = "w-8 h-8 rounded-xl flex items-center justify-center transition bg-emerald-500 text-slate-950";
                 card.querySelector('div:last-child i').className = "fa-solid fa-check text-sm";
             } else {
@@ -429,9 +465,7 @@
         function markAllAttendance(status) {
             const filterCat = document.getElementById('class-filter-category').value;
             const filteredStudents = state.students.filter(s => !filterCat || s.category === filterCat);
-            filteredStudents.forEach(s => {
-                currentAttendanceMap[s.id] = status;
-            });
+            filteredStudents.forEach(s => { currentAttendanceMap[s.id] = status; });
             renderAttendanceList();
         }
 
@@ -440,12 +474,12 @@
             const professor = document.getElementById('class-professor').value;
 
             if (!date || !professor) {
-                showToast('Preencha a data e selecione o professor responsável.', 'warning');
+                showToast('Preencha a data e selecione o professor.', 'warning');
                 return;
             }
 
             if (state.students.length === 0) {
-                showToast('Cadastre alunos antes de lançar frequência.', 'warning');
+                showToast('Cadastre alunos antes.', 'warning');
                 return;
             }
 
@@ -462,37 +496,83 @@
             }));
 
             state.attendanceLogs.push(...logEntries);
-            persist();
-            showToast('Frequência salva no dispositivo!');
+            persistLocally();
+            showToast('Enviando para a planilha...', 'info');
 
-            // Envio automático para o Google Sheets via Apps Script
-            if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes('SUA_URL_AQUI')) {
-                showToast('Enviando para a planilha...', 'info');
-                try {
-                    for (let entry of logEntries) {
-                        await fetch(APPS_SCRIPT_URL, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'Frequencia', ...entry })
-                        });
-                    }
-                    showToast('Lançamento salvo com sucesso no Google Sheets!');
-                } catch (e) {
-                    console.error('Erro de envio:', e);
-                    showToast('Erro ao sincronizar com Google Sheets.', 'error');
+            for (let entry of logEntries) {
+                await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'Frequencia', ...entry })
+                });
+            }
+            showToast('Frequência salva com sucesso!');
+        }
+
+        function renderManageLogs() {
+            const filterDate = document.getElementById('filter-log-date').value;
+            const container = document.getElementById('manage-logs-list');
+
+            let uniqueClassesMap = {};
+            state.attendanceLogs.forEach(l => {
+                if (!uniqueClassesMap[l.id]) {
+                    uniqueClassesMap[l.id] = { id: l.id, date: l.date, professor: l.professor, totalPresentes: 0, totalAlunos: 0 };
                 }
-            } else {
-                showToast('Aviso: Substitua a constante APPS_SCRIPT_URL no código para enviar para o Google Sheets.', 'warning');
+                uniqueClassesMap[l.id].totalAlunos++;
+                if (l.status === 'Presente') uniqueClassesMap[l.id].totalPresentes++;
+            });
+
+            let classesList = Object.values(uniqueClassesMap);
+            if (filterDate) {
+                classesList = classesList.filter(c => c.date === filterDate);
+            }
+            classesList.sort((a, b) => b.date.localeCompare(a.date));
+
+            if (classesList.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">Nenhum lançamento encontrado.</div>`;
+                return;
+            }
+
+            container.innerHTML = classesList.map(c => `
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 flex items-center justify-between shadow">
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-100"><i class="fa-solid fa-calendar-day text-amber-400 mr-1"></i> ${c.date.split('-').reverse().join('/')}</h4>
+                        <p class="text-xs text-slate-400 mt-0.5">Prof: <b>${c.professor}</b></p>
+                        <p class="text-[10px] text-emerald-400 mt-0.5">${c.totalPresentes} presentes de ${c.totalAlunos} alunos</p>
+                    </div>
+                    <div>
+                        <button onclick="deleteAttendanceGroup('${c.id}')" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 p-2.5 rounded-xl text-xs border border-rose-500/30 flex items-center gap-1">
+                            <i class="fa-solid fa-trash"></i> Excluir
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteAttendanceGroup(attendanceId) {
+            if (!confirm('Deseja excluir este lançamento de frequência?')) return;
+            state.attendanceLogs = state.attendanceLogs.filter(l => l.id !== attendanceId);
+            persistLocally();
+            renderManageLogs();
+            showToast('Lançamento excluído!');
+
+            if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes('SUA_URL_AQUI')) {
+                try {
+                    await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'DeletarFrequencia', id: attendanceId })
+                    });
+                } catch (e) { console.error(e); }
             }
         }
 
-        // --- Tab 2: Alunos ---
         function renderStudentsList() {
             const search = document.getElementById('student-search').value.toLowerCase();
             const container = document.getElementById('students-list');
-
-            const filtered = state.students.filter(s => s.name.toLowerCase().includes(search) || s.category.toLowerCase().includes(search) || s.belt.toLowerCase().includes(search));
+            const filtered = state.students.filter(s => s.name.toLowerCase().includes(search) || s.category.toLowerCase().includes(search));
 
             if (filtered.length === 0) {
                 container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">Nenhum aluno encontrado.</div>`;
@@ -502,7 +582,6 @@
             container.innerHTML = filtered.map(s => {
                 const beltObj = state.belts.find(b => b.name === s.belt);
                 const beltColor = beltObj ? beltObj.color : '#ffffff';
-
                 return `
                     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center justify-between shadow">
                         <div class="flex items-center gap-3">
@@ -541,7 +620,6 @@
                 document.getElementById('student-form').reset();
                 document.getElementById('student-id').value = '';
             }
-
             modal.classList.remove('hidden');
         }
 
@@ -549,7 +627,11 @@
             document.getElementById('student-modal').classList.add('hidden');
         }
 
-        function saveStudent(e) {
+        function editStudent(id) {
+            openStudentModal(id);
+        }
+
+        async function saveStudent(e) {
             e.preventDefault();
             const id = document.getElementById('student-id').value;
             const name = document.getElementById('student-name').value;
@@ -558,52 +640,45 @@
 
             if (id) {
                 const s = state.students.find(x => x.id === id);
-                s.name = name;
-                s.category = category;
-                s.belt = belt;
-                showToast('Aluno atualizado com sucesso!');
+                if (s) {
+                    s.name = name; 
+                    s.category = category; 
+                    s.belt = belt;
+                }
+                showToast('Aluno atualizado!');
             } else {
                 state.students.push({ id: 's_' + Date.now(), name, category, belt });
-                showToast('Aluno cadastrado com sucesso!');
+                showToast('Aluno cadastrado!');
             }
 
-            persist();
+            persistLocally();
             closeStudentModal();
             renderStudentsList();
+            await syncTableToSheets('Alunos', state.students);
         }
 
-        function editStudent(id) {
-            openStudentModal(id);
-        }
-
-        function deleteStudent(id) {
+        async function deleteStudent(id) {
             state.students = state.students.filter(s => s.id !== id);
-            persist();
+            persistLocally();
             renderStudentsList();
             showToast('Aluno removido.');
+            await syncTableToSheets('Alunos', state.students);
         }
 
-        // --- Tab 3: Cadastros ---
         function renderCadastros() {
-            // Professors
+            const profBeltSelect = document.getElementById('prof-belt');
+            if (profBeltSelect) {
+                profBeltSelect.innerHTML = state.belts.map(b => `<option value="${b.name}">Faixa ${b.name}</option>`).join('');
+            }
+
             const profContainer = document.getElementById('professors-list');
             profContainer.innerHTML = state.professors.map(p => `
                 <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
                     <div><span class="font-bold text-slate-200">${p.name}</span> <span class="text-slate-400">(Faixa ${p.belt})</span></div>
                     <button onclick="deleteProfessor('${p.id}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
                 </div>
-            `).join('') || '<div class="text-slate-500 text-xs text-center py-2">Nenhum professor cadastrado.</div>';
+            `).join('') || '<div class="text-slate-500 text-xs text-center py-2">Nenhum professor.</div>';
 
-            // Categories
-            const catContainer = document.getElementById('categories-list');
-            catContainer.innerHTML = state.categories.map(c => `
-                <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-slate-200">
-                    <span>${c}</span>
-                    <button onclick="deleteCategory('${c}')" class="text-rose-400 hover:text-rose-300 ml-1"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            `).join('') || '<div class="text-slate-500 text-xs">Nenhuma categoria.</div>';
-
-            // Belts
             const beltContainer = document.getElementById('belts-list');
             beltContainer.innerHTML = state.belts.map(b => `
                 <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
@@ -613,33 +688,71 @@
                     </div>
                     <button onclick="deleteBelt('${b.name}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
                 </div>
-            `).join('') || '<div class="text-slate-500 text-xs text-center py-2">Nenhuma faixa cadastrada.</div>';
+            `).join('') || '<div class="text-slate-500 text-xs text-center py-2">Nenhuma faixa.</div>';
+
+            const catContainer = document.getElementById('categories-list');
+            catContainer.innerHTML = state.categories.map(c => `
+                <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-slate-200">
+                    <span>${c}</span>
+                    <button onclick="deleteCategory('${c}')" class="text-rose-400 hover:text-rose-300 ml-1"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            `).join('');
         }
 
-        function addProfessor(e) {
+        async function addProfessor(e) {
             e.preventDefault();
             const name = document.getElementById('prof-name').value;
             const belt = document.getElementById('prof-belt').value;
             state.professors.push({ id: 'p_' + Date.now(), name, belt });
-            persist();
+            persistLocally();
             document.getElementById('professor-form').reset();
             renderCadastros();
             showToast('Professor cadastrado!');
+            await syncTableToSheets('Professores', state.professors);
         }
 
-        function deleteProfessor(id) {
+        async function deleteProfessor(id) {
             state.professors = state.professors.filter(p => p.id !== id);
-            persist();
+            persistLocally();
             renderCadastros();
             showToast('Professor removido.');
+            await syncTableToSheets('Professores', state.professors);
         }
 
-        function addCategory(e) {
+        async function addBelt(e) {
+            e.preventDefault();
+            const name = document.getElementById('belt-name').value;
+            const color = document.getElementById('belt-color').value;
+            if (!state.belts.find(b => b.name.toLowerCase() === name.toLowerCase())) {
+                state.belts.push({ name, color });
+                persistLocally();
+                document.getElementById('belt-form').reset();
+                renderCadastros();
+                showToast('Faixa adicionada!');
+                await syncTableToSheets('Faixas', state.belts);
+            } else {
+                showToast('Esta faixa já existe!', 'warning');
+            }
+        }
+
+        async function deleteBelt(name) {
+            if (state.belts.length <= 1) {
+                showToast('Você precisa manter pelo menos uma faixa.', 'warning');
+                return;
+            }
+            state.belts = state.belts.filter(b => b.name !== name);
+            persistLocally();
+            renderCadastros();
+            showToast('Faixa removida.');
+            await syncTableToSheets('Faixas', state.belts);
+        }
+
+        async function addCategory(e) {
             e.preventDefault();
             const name = document.getElementById('cat-name').value;
             if (!state.categories.includes(name)) {
                 state.categories.push(name);
-                persist();
+                persistLocally();
                 document.getElementById('category-form').reset();
                 renderCadastros();
                 showToast('Categoria adicionada!');
@@ -648,39 +761,17 @@
 
         function deleteCategory(name) {
             state.categories = state.categories.filter(c => c !== name);
-            persist();
+            persistLocally();
             renderCadastros();
             showToast('Categoria removida.');
         }
 
-        function addBelt(e) {
-            e.preventDefault();
-            const name = document.getElementById('belt-name').value;
-            const color = document.getElementById('belt-color').value;
-            if (!state.belts.find(b => b.name === name)) {
-                state.belts.push({ name, color });
-                persist();
-                document.getElementById('belt-form').reset();
-                renderCadastros();
-                showToast('Faixa adicionada!');
-            }
-        }
-
-        function deleteBelt(name) {
-            state.belts = state.belts.filter(b => b.name !== name);
-            persist();
-            renderCadastros();
-            showToast('Faixa removida.');
-        }
-
-        // --- Tab 4: Relatórios ---
         function initReportTab() {
             const startInput = document.getElementById('report-start');
             const endInput = document.getElementById('report-end');
-            
             if (!startInput.value) {
                 const d = new Date();
-                d.setDate(1); // First day of month
+                d.setDate(1);
                 startInput.valueAsDate = d;
                 endInput.valueAsDate = new Date();
             }
@@ -688,7 +779,6 @@
             const studentSelect = document.getElementById('report-student');
             studentSelect.innerHTML = '<option value="">Todos os Alunos</option>' + 
                 state.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-
             generateReport();
         }
 
@@ -703,59 +793,85 @@
             if (endDate) logs = logs.filter(l => l.date <= endDate);
             if (studentId) logs = logs.filter(l => l.studentId === studentId);
 
-            if (logs.length === 0) {
-                output.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs">Nenhum registro encontrado para o período/filtro selecionado.</div>`;
+            // Descobrir quantas aulas distintas ocorreram no período filtrado
+            let uniqueClassDates = [...new Set(logs.map(l => l.date))];
+            let totalAulasPeriodo = uniqueClassDates.length;
+
+            if (logs.length === 0 || totalAulasPeriodo === 0) {
+                output.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs">Nenhum registro encontrado para o período selecionado.</div>`;
                 return;
             }
 
-            // Group by student summary
             let summary = {};
             state.students.forEach(s => {
                 if (!studentId || s.id === studentId) {
-                    summary[s.id] = { name: s.name, category: s.category, belt: s.belt, present: 0, totalClasses: 0 };
+                    summary[s.id] = { name: s.name, category: s.category, belt: s.belt, present: 0, absent: 0 };
                 }
             });
 
             logs.forEach(l => {
-                if (summary[l.studentId]) {
-                    summary[l.studentId].totalClasses++;
-                    if (l.status === 'Presente') {
-                        summary[l.studentId].present++;
-                    }
+                if (!summary[l.studentId]) {
+                    summary[l.studentId] = { name: l.studentName, category: l.category, belt: l.belt, present: 0, absent: 0 };
+                }
+                if (l.status === 'Presente') {
+                    summary[l.studentId].present++;
+                } else {
+                    summary[l.studentId].absent++;
                 }
             });
 
+            // Montagem em formato de Tabela profissional
+            let rowsHtml = Object.values(summary).map(st => {
+                let totalRegistrados = st.present + st.absent;
+                let percentual = totalRegistrados > 0 ? ((st.present / totalRegistrados) * 100).toFixed(1) : '0.0';
+                
+                return `
+                    <tr>
+                        <td style="padding: 10px; border-bottom: 1px solid #334155;">
+                            <div style="font-weight: bold; color: #f8fafc;">${st.name}</div>
+                            <div style="font-size: 10px; color: #94a3b8;">${st.category} • Faixa ${st.belt}</div>
+                        </td>
+                        <td style="padding: 10px; border-bottom: 1px solid #334155; text-align: center; color: #34d399; font-weight: bold;">
+                            ${st.present}
+                        </td>
+                        <td style="padding: 10px; border-bottom: 1px solid #334155; text-align: center; color: #f87171; font-weight: bold;">
+                            ${st.absent}
+                        </td>
+                        <td style="padding: 10px; border-bottom: 1px solid #334155; text-align: right; color: #fbbf24; font-weight: bold;">
+                            ${percentual}%
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
             output.innerHTML = `
-                <div class="print-only text-slate-900 mb-4 pb-2 border-b border-slate-300">
-                    <h2 class="text-lg font-bold">Relatório de Frequência - Jiu-Jitsu</h2>
-                    <p class="text-xs">Período: ${startDate || 'Início'} até ${endDate || 'Hoje'}</p>
+                <div class="print-only mb-4 pb-2 border-b border-slate-300">
+                    <h2 class="text-lg font-bold" style="color: black !important;">Relatório de Frequência - Jiu-Jitsu</h2>
+                    <p class="text-xs" style="color: #475569 !important;">Período: ${startDate ? startDate.split('-').reverse().join('/') : 'Início'} até ${endDate ? endDate.split('-').reverse().join('/') : 'Hoje'}</p>
                 </div>
-                <div class="space-y-3">
-                    <h3 class="font-bold text-xs text-amber-400 no-print uppercase tracking-wider">Resumo de Presença</h3>
-                    <div class="divide-y divide-slate-800 space-y-2">
-                        ${Object.values(summary).map(st => `
-                            <div class="pt-2 flex items-center justify-between text-xs">
-                                <div>
-                                    <span class="font-bold text-slate-200 block">${st.name}</span>
-                                    <span class="text-slate-400">${st.category} • Faixa ${st.belt}</span>
-                                </div>
-                                <div class="text-right">
-                                    <span class="font-bold text-emerald-400">${st.present} presença(s)</span>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #475569; text-align: left; color: #94a3b8;">
+                                <th style="padding: 8px;">Aluno</th>
+                                <th style="padding: 8px; text-align: center;">Presenças</th>
+                                <th style="padding: 8px; text-align: center;">Faltas</th>
+                                <th style="padding: 8px; text-align: right;">% Freq.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
                 </div>
             `;
         }
 
-        function printReport() {
-            window.print();
-        }
+        function printReport() { window.print(); }
 
-        // Initialize App on Load
         window.onload = function() {
             switchTab('lancar');
+            loadDataFromSheets();
         };
     </script>
 </body>
