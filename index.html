@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jiu-Jitsu Frequência Mobile</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        jjdark: '#0f172a',
+                        jjcard: '#1e293b',
+                        jjaccent: '#f59e0b', // Amber
+                        jjgreen: '#10b981',  // Emerald
+                        jjred: '#ef4444'     // Red
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar and touch optimizations */
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-full flex flex-col font-sans">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 left-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Top Header -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between no-print sticky top-0 z-30 shadow-md">
+        <div class="flex items-center space-x-2">
+            <div class="bg-amber-500 text-slate-950 p-2 rounded-xl font-black text-lg flex items-center justify-center w-10 h-10 shadow">
+                <i class="fa-solid fa-hand-fist"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base leading-tight">BJJ Controle</h1>
+                <p class="text-xs text-emerald-400" id="sync-status"><i class="fa-solid fa-cloud"></i> Conectado via Apps Script</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area (Scrollable) -->
+    <main class="flex-1 overflow-y-auto pb-24 p-4 max-w-md mx-auto w-full">
+
+        <!-- TAB 1: LANÇAR AULA -->
+        <section id="tab-lancar" class="tab-content space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg">
+                <h2 class="text-lg font-bold text-amber-400 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-user"></i> Lançar Frequência
+                </h2>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Data da Aula</label>
+                        <input type="date" id="class-date" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Professor Responsável</label>
+                        <select id="class-professor" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="">Selecione o Professor...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Filtrar por Categoria (Opcional)</label>
+                        <select id="class-filter-category" onchange="renderAttendanceList()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="">Todas as Categorias</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Controls & List -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider" id="attendance-counter">Alunos (0)</span>
+                    <div class="space-x-2">
+                        <button onclick="markAllAttendance(true)" class="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-400 px-2.5 py-1.5 rounded-lg border border-slate-700 font-medium">Todos Presentes</button>
+                        <button onclick="markAllAttendance(false)" class="text-xs bg-slate-800 hover:bg-slate-700 text-red-400 px-2.5 py-1.5 rounded-lg border border-slate-700 font-medium">Limpar</button>
+                    </div>
+                </div>
+
+                <div id="attendance-list" class="space-y-2">
+                    <!-- Dynamic Student Check-in Cards -->
+                    <div class="text-center py-8 text-slate-500 text-sm">Carregando alunos...</div>
+                </div>
+
+                <button onclick="saveAttendance()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3.5 px-4 rounded-2xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-base mt-4">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar Lançamento
+                </button>
+            </div>
+        </section>
+
+        <!-- TAB 2: ALUNOS -->
+        <section id="tab-alunos" class="tab-content hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-users"></i> Gestão de Alunos
+                </h2>
+                <button onclick="openStudentModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 shadow">
+                    <i class="fa-solid fa-plus"></i> Novo Aluno
+                </button>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="flex gap-2">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-slate-500 text-xs"></i>
+                    <input type="text" id="student-search" oninput="renderStudentsList()" placeholder="Buscar aluno..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+
+            <div id="students-list" class="space-y-2">
+                <!-- Dynamic Students -->
+            </div>
+        </section>
+
+        <!-- TAB 3: CADASTROS (Professores, Categorias, Faixas) -->
+        <section id="tab-cadastros" class="tab-content hidden space-y-6">
+            <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-address-book"></i> Cadastros & Equipe
+            </h2>
+
+            <!-- Professors Management -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-chalkboard-user text-amber-400"></i> Professores</h3>
+                </div>
+                <form id="professor-form" onsubmit="addProfessor(event)" class="flex gap-2">
+                    <input type="text" id="prof-name" placeholder="Nome do Professor" required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <select id="prof-belt" required class="bg-slate-950 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                        <option value="Preta">Preta</option>
+                        <option value="Marrom">Marrom</option>
+                        <option value="Roxa">Roxa</option>
+                        <option value="Azul">Azul</option>
+                    </select>
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i></button>
+                </form>
+                <div id="professors-list" class="space-y-1.5 pt-2"></div>
+            </div>
+
+            <!-- Categories Management -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-tags text-amber-400"></i> Categorias</h3>
+                </div>
+                <form id="category-form" onsubmit="addCategory(event)" class="flex gap-2">
+                    <input type="text" id="cat-name" placeholder="Ex: Adulto, Infantil, Master" required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i></button>
+                </form>
+                <div id="categories-list" class="flex flex-wrap gap-1.5 pt-2"></div>
+            </div>
+
+            <!-- Belts Management -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-medal text-amber-400"></i> Faixas</h3>
+                </div>
+                <form id="belt-form" onsubmit="addBelt(event)" class="flex gap-2">
+                    <input type="text" id="belt-name" placeholder="Ex: Branca, Azul, Roxa" required class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    <input type="color" id="belt-color" value="#ffffff" class="w-10 h-9 bg-slate-950 border border-slate-700 rounded-xl cursor-pointer p-1">
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs"><i class="fa-solid fa-plus"></i></button>
+                </form>
+                <div id="belts-list" class="space-y-1.5 pt-2"></div>
+            </div>
+        </section>
+
+        <!-- TAB 4: RELATÓRIOS -->
+        <section id="tab-relatorios" class="tab-content hidden space-y-4">
+            <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-chart-bar"></i> Relatórios de Frequência
+            </h2>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3 no-print">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Data Inicial</label>
+                        <input type="date" id="report-start" onchange="generateReport()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Data Final</label>
+                        <input type="date" id="report-end" onchange="generateReport()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Filtrar Aluno</label>
+                    <select id="report-student" onchange="generateReport()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                        <option value="">Todos os Alunos</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="printReport()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold py-2.5 px-3 rounded-xl border border-slate-700 text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-file-pdf"></i> Salvar PDF / Imprimir
+                    </button>
+                </div>
+            </div>
+
+            <!-- Report Output Area -->
+            <div id="report-output" class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3 print-container">
+                <div class="text-center py-6 text-slate-500 text-xs">Selecione os filtros acima para gerar o relatório.</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Student Modal (Add/Edit) -->
+    <div id="student-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 w-full max-w-sm space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h3 id="modal-title" class="font-bold text-base text-amber-400">Cadastrar Aluno</h3>
+                <button onclick="closeStudentModal()" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="student-form" onsubmit="saveStudent(event)" class="space-y-3">
+                <input type="hidden" id="student-id">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Nome Completo</label>
+                    <input type="text" id="student-name" required placeholder="Nome do aluno" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Categoria</label>
+                    <select id="student-category" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                        <!-- options -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Faixa</label>
+                    <select id="student-belt" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                        <!-- options -->
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeStudentModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar (Mobile Optimized) -->
+    <nav class="bg-slate-900 border-t border-slate-800 fixed bottom-0 left-0 right-0 z-40 no-print max-w-md mx-auto flex justify-around py-2 px-1 shadow-2xl">
+        <button onclick="switchTab('lancar')" id="nav-lancar" class="flex flex-col items-center justify-center flex-1 py-1 text-amber-400 transition">
+            <i class="fa-solid fa-clipboard-user text-base mb-0.5"></i>
+            <span class="text-[10px] font-medium">Lançar</span>
+        </button>
+        <button onclick="switchTab('alunos')" id="nav-alunos" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 transition">
+            <i class="fa-solid fa-users text-base mb-0.5"></i>
+            <span class="text-[10px] font-medium">Alunos</span>
+        </button>
+        <button onclick="switchTab('cadastros')" id="nav-cadastros" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 transition">
+            <i class="fa-solid fa-address-book text-base mb-0.5"></i>
+            <span class="text-[10px] font-medium">Equipe</span>
+        </button>
+        <button onclick="switchTab('relatorios')" id="nav-relatorios" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 hover:text-slate-200 transition">
+            <i class="fa-solid fa-chart-bar text-base mb-0.5"></i>
+            <span class="text-[10px] font-medium">Relatórios</span>
+        </button>
+    </nav>
+
+    <script>
+        // =========================================================================
+        // INSIRA A SUA URL DO GOOGLE APPS SCRIPT NA LINHA ABAIXO:
+        // =========================================================================
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0UFLV_C4Y6nnAMzOIP2kQST6slUdbiGTVopPq_Igu6iiuhJxycHQPsxor0sm9iFRS/exec';
+
+        // --- State Management ---
+        let state = {
+            students: JSON.parse(localStorage.getItem('bjj_students')) || [
+                { id: '1', name: 'Carlos Silva', category: 'Adulto', belt: 'Azul' },
+                { id: '2', name: 'Mariana Souza', category: 'Adulto', belt: 'Roxa' },
+                { id: '3', name: 'João Pedro', category: 'Infantil', belt: 'Cinza' }
+            ],
+            professors: JSON.parse(localStorage.getItem('bjj_professors')) || [
+                { id: '1', name: 'Mestre Roberto', belt: 'Preta' },
+                { id: '2', name: 'Professor André', belt: 'Marrom' }
+            ],
+            categories: JSON.parse(localStorage.getItem('bjj_categories')) || ['Infantil', 'Juvenil', 'Adulto', 'Master'],
+            belts: JSON.parse(localStorage.getItem('bjj_belts')) || [
+                { name: 'Branca', color: '#ffffff' },
+                { name: 'Cinza', color: '#94a3b8' },
+                { name: 'Amarela', color: '#eab308' },
+                { name: 'Laranja', color: '#f97316' },
+                { name: 'Verde', color: '#22c55e' },
+                { name: 'Azul', color: '#3b82f6' },
+                { name: 'Roxa', color: '#a855f7' },
+                { name: 'Marrom', color: '#78350f' },
+                { name: 'Preta', color: '#0f172a' }
+            ],
+            attendanceLogs: JSON.parse(localStorage.getItem('bjj_attendance')) || []
+        };
+
+        // Save state to localStorage
+        function persist() {
+            localStorage.setItem('bjj_students', JSON.stringify(state.students));
+            localStorage.setItem('bjj_professors', JSON.stringify(state.professors));
+            localStorage.setItem('bjj_categories', JSON.stringify(state.categories));
+            localStorage.setItem('bjj_belts', JSON.stringify(state.belts));
+            localStorage.setItem('bjj_attendance', JSON.stringify(state.attendanceLogs));
+        }
+
+        // --- Toast Notifications ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-amber-600');
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-bold flex items-center justify-between pointer-events-auto transition transform translate-y-2 opacity-0 duration-300`;
+            toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- Navigation ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('text-amber-400');
+                btn.classList.add('text-slate-400');
+            });
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-400');
+                activeNav.classList.add('text-amber-400');
+            }
+
+            window.scrollTo(0, 0);
+
+            // Trigger specific tab initializers
+            if (tabId === 'lancar') initLancarTab();
+            if (tabId === 'alunos') renderStudentsList();
+            if (tabId === 'cadastros') renderCadastros();
+            if (tabId === 'relatorios') initReportTab();
+        }
+
+        // --- Tab 1: Lançar Aula ---
+        function initLancarTab() {
+            const dateInput = document.getElementById('class-date');
+            if (!dateInput.value) {
+                dateInput.valueAsDate = new Date();
+            }
+
+            // Populate Professors dropdown
+            const profSelect = document.getElementById('class-professor');
+            profSelect.innerHTML = '<option value="">Selecione o Professor...</option>' + 
+                state.professors.map(p => `<option value="${p.name}">${p.name} (${p.belt})</option>`).join('');
+
+            // Populate Category filter
+            const catSelect = document.getElementById('class-filter-category');
+            catSelect.innerHTML = '<option value="">Todas as Categorias</option>' + 
+                state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            renderAttendanceList();
+        }
+
+        let currentAttendanceMap = {}; // studentId -> boolean
+
+        function renderAttendanceList() {
+            const filterCat = document.getElementById('class-filter-category').value;
+            const container = document.getElementById('attendance-list');
+            
+            const filteredStudents = state.students.filter(s => !filterCat || s.category === filterCat);
+            document.getElementById('attendance-counter').innerText = `Alunos (${filteredStudents.length})`;
+
+            if (filteredStudents.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">Nenhum aluno cadastrado nesta categoria.</div>`;
+                return;
+            }
+
+            container.innerHTML = filteredStudents.map(s => {
+                const isPresent = currentAttendanceMap[s.id] !== undefined ? currentAttendanceMap[s.id] : true; // Default to present
+                currentAttendanceMap[s.id] = isPresent;
+                const beltObj = state.belts.find(b => b.name === s.belt);
+                const beltColor = beltObj ? beltObj.color : '#ffffff';
+
+                return `
+                    <div onclick="toggleStudentAttendance('${s.id}')" id="card-${s.id}" class="flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${isPresent ? 'bg-slate-900 border-emerald-500/50 shadow-emerald-950/20 shadow-md' : 'bg-slate-900/50 border-slate-800 opacity-60'}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-10 rounded-full" style="background-color: ${beltColor};"></div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-100">${s.name}</h4>
+                                <p class="text-[10px] text-slate-400">${s.category} • Faixa ${s.belt}</p>
+                            </div>
+                        </div>
+                        <div class="w-8 h-8 rounded-xl flex items-center justify-center transition ${isPresent ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-500'}">
+                            <i class="fa-solid ${isPresent ? 'fa-check' : 'fa-xmark'} text-sm"></i>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleStudentAttendance(studentId) {
+            currentAttendanceMap[studentId] = !currentAttendanceMap[studentId];
+            const card = document.getElementById(`card-${studentId}`);
+            const isPresent = currentAttendanceMap[studentId];
+            
+            if (isPresent) {
+                card.className = "flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none bg-slate-900 border-emerald-500/50 shadow-emerald-950/20 shadow-md";
+                card.querySelector('div:last-child').className = "w-8 h-8 rounded-xl flex items-center justify-center transition bg-emerald-500 text-slate-950";
+                card.querySelector('div:last-child i').className = "fa-solid fa-check text-sm";
+            } else {
+                card.className = "flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none bg-slate-900/50 border-slate-800 opacity-60";
+                card.querySelector('div:last-child').className = "w-8 h-8 rounded-xl flex items-center justify-center transition bg-slate-800 text-slate-500";
+                card.querySelector('div:last-child i').className = "fa-solid fa-xmark text-sm";
+            }
+        }
+
+        function markAllAttendance(status) {
+            const filterCat = document.getElementById('class-filter-category').value;
+            const filteredStudents = state.students.filter(s => !filterCat || s.category === filterCat);
+            filteredStudents.forEach(s => {
+                currentAttendanceMap[s.id] = status;
+            });
+            renderAttendanceList();
+        }
+
+        async function saveAttendance() {
+            const date = document.getElementById('class-date').value;
+            const professor = document.getElementById('class-professor').value;
+
+            if (!date || !professor) {
+                showToast('Preencha a data e selecione o professor responsável.', 'warning');
+                return;
+            }
+
+            if (state.students.length === 0) {
+                showToast('Cadastre alunos antes de lançar frequência.', 'warning');
+                return;
+            }
+
+            const attendanceId = 'att_' + Date.now();
+            const logEntries = state.students.map(s => ({
+                id: attendanceId,
+                date,
+                professor,
+                studentId: s.id,
+                studentName: s.name,
+                category: s.category,
+                belt: s.belt,
+                status: currentAttendanceMap[s.id] !== false ? 'Presente' : 'Ausente'
+            }));
+
+            state.attendanceLogs.push(...logEntries);
+            persist();
+            showToast('Frequência salva no dispositivo!');
+
+            // Envio automático para o Google Sheets via Apps Script
+            if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes('SUA_URL_AQUI')) {
+                showToast('Enviando para a planilha...', 'info');
+                try {
+                    for (let entry of logEntries) {
+                        await fetch(APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'Frequencia', ...entry })
+                        });
+                    }
+                    showToast('Lançamento salvo com sucesso no Google Sheets!');
+                } catch (e) {
+                    console.error('Erro de envio:', e);
+                    showToast('Erro ao sincronizar com Google Sheets.', 'error');
+                }
+            } else {
+                showToast('Aviso: Substitua a constante APPS_SCRIPT_URL no código para enviar para o Google Sheets.', 'warning');
+            }
+        }
+
+        // --- Tab 2: Alunos ---
+        function renderStudentsList() {
+            const search = document.getElementById('student-search').value.toLowerCase();
+            const container = document.getElementById('students-list');
+
+            const filtered = state.students.filter(s => s.name.toLowerCase().includes(search) || s.category.toLowerCase().includes(search) || s.belt.toLowerCase().includes(search));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">Nenhum aluno encontrado.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(s => {
+                const beltObj = state.belts.find(b => b.name === s.belt);
+                const beltColor = beltObj ? beltObj.color : '#ffffff';
+
+                return `
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex items-center justify-between shadow">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-10 rounded-full" style="background-color: ${beltColor};"></div>
+                            <div>
+                                <h4 class="font-bold text-sm text-slate-100">${s.name}</h4>
+                                <p class="text-[10px] text-slate-400">${s.category} • Faixa ${s.belt}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="editStudent('${s.id}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-xl text-xs"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteStudent('${s.id}')" class="bg-slate-800 hover:bg-slate-700 text-rose-400 p-2 rounded-xl text-xs"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openStudentModal(studentId = null) {
+            const modal = document.getElementById('student-modal');
+            const catSelect = document.getElementById('student-category');
+            const beltSelect = document.getElementById('student-belt');
+
+            catSelect.innerHTML = state.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            beltSelect.innerHTML = state.belts.map(b => `<option value="${b.name}">Faixa ${b.name}</option>`).join('');
+
+            if (studentId) {
+                document.getElementById('modal-title').innerText = 'Editar Aluno';
+                const s = state.students.find(x => x.id === studentId);
+                document.getElementById('student-id').value = s.id;
+                document.getElementById('student-name').value = s.name;
+                document.getElementById('student-category').value = s.category;
+                document.getElementById('student-belt').value = s.belt;
+            } else {
+                document.getElementById('modal-title').innerText = 'Cadastrar Aluno';
+                document.getElementById('student-form').reset();
+                document.getElementById('student-id').value = '';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeStudentModal() {
+            document.getElementById('student-modal').classList.add('hidden');
+        }
+
+        function saveStudent(e) {
+            e.preventDefault();
+            const id = document.getElementById('student-id').value;
+            const name = document.getElementById('student-name').value;
+            const category = document.getElementById('student-category').value;
+            const belt = document.getElementById('student-belt').value;
+
+            if (id) {
+                const s = state.students.find(x => x.id === id);
+                s.name = name;
+                s.category = category;
+                s.belt = belt;
+                showToast('Aluno atualizado com sucesso!');
+            } else {
+                state.students.push({ id: 's_' + Date.now(), name, category, belt });
+                showToast('Aluno cadastrado com sucesso!');
+            }
+
+            persist();
+            closeStudentModal();
+            renderStudentsList();
+        }
+
+        function editStudent(id) {
+            openStudentModal(id);
+        }
+
+        function deleteStudent(id) {
+            state.students = state.students.filter(s => s.id !== id);
+            persist();
+            renderStudentsList();
+            showToast('Aluno removido.');
+        }
+
+        // --- Tab 3: Cadastros ---
+        function renderCadastros() {
+            // Professors
+            const profContainer = document.getElementById('professors-list');
+            profContainer.innerHTML = state.professors.map(p => `
+                <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
+                    <div><span class="font-bold text-slate-200">${p.name}</span> <span class="text-slate-400">(Faixa ${p.belt})</span></div>
+                    <button onclick="deleteProfessor('${p.id}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('') || '<div class="text-slate-500 text-xs text-center py-2">Nenhum professor cadastrado.</div>';
+
+            // Categories
+            const catContainer = document.getElementById('categories-list');
+            catContainer.innerHTML = state.categories.map(c => `
+                <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-slate-200">
+                    <span>${c}</span>
+                    <button onclick="deleteCategory('${c}')" class="text-rose-400 hover:text-rose-300 ml-1"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            `).join('') || '<div class="text-slate-500 text-xs">Nenhuma categoria.</div>';
+
+            // Belts
+            const beltContainer = document.getElementById('belts-list');
+            beltContainer.innerHTML = state.belts.map(b => `
+                <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-xs">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full border border-slate-700" style="background-color: ${b.color};"></div>
+                        <span class="font-bold text-slate-200">Faixa ${b.name}</span>
+                    </div>
+                    <button onclick="deleteBelt('${b.name}')" class="text-rose-400 hover:text-rose-300 p-1"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('') || '<div class="text-slate-500 text-xs text-center py-2">Nenhuma faixa cadastrada.</div>';
+        }
+
+        function addProfessor(e) {
+            e.preventDefault();
+            const name = document.getElementById('prof-name').value;
+            const belt = document.getElementById('prof-belt').value;
+            state.professors.push({ id: 'p_' + Date.now(), name, belt });
+            persist();
+            document.getElementById('professor-form').reset();
+            renderCadastros();
+            showToast('Professor cadastrado!');
+        }
+
+        function deleteProfessor(id) {
+            state.professors = state.professors.filter(p => p.id !== id);
+            persist();
+            renderCadastros();
+            showToast('Professor removido.');
+        }
+
+        function addCategory(e) {
+            e.preventDefault();
+            const name = document.getElementById('cat-name').value;
+            if (!state.categories.includes(name)) {
+                state.categories.push(name);
+                persist();
+                document.getElementById('category-form').reset();
+                renderCadastros();
+                showToast('Categoria adicionada!');
+            }
+        }
+
+        function deleteCategory(name) {
+            state.categories = state.categories.filter(c => c !== name);
+            persist();
+            renderCadastros();
+            showToast('Categoria removida.');
+        }
+
+        function addBelt(e) {
+            e.preventDefault();
+            const name = document.getElementById('belt-name').value;
+            const color = document.getElementById('belt-color').value;
+            if (!state.belts.find(b => b.name === name)) {
+                state.belts.push({ name, color });
+                persist();
+                document.getElementById('belt-form').reset();
+                renderCadastros();
+                showToast('Faixa adicionada!');
+            }
+        }
+
+        function deleteBelt(name) {
+            state.belts = state.belts.filter(b => b.name !== name);
+            persist();
+            renderCadastros();
+            showToast('Faixa removida.');
+        }
+
+        // --- Tab 4: Relatórios ---
+        function initReportTab() {
+            const startInput = document.getElementById('report-start');
+            const endInput = document.getElementById('report-end');
+            
+            if (!startInput.value) {
+                const d = new Date();
+                d.setDate(1); // First day of month
+                startInput.valueAsDate = d;
+                endInput.valueAsDate = new Date();
+            }
+
+            const studentSelect = document.getElementById('report-student');
+            studentSelect.innerHTML = '<option value="">Todos os Alunos</option>' + 
+                state.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+            generateReport();
+        }
+
+        function generateReport() {
+            const startDate = document.getElementById('report-start').value;
+            const endDate = document.getElementById('report-end').value;
+            const studentId = document.getElementById('report-student').value;
+            const output = document.getElementById('report-output');
+
+            let logs = state.attendanceLogs;
+            if (startDate) logs = logs.filter(l => l.date >= startDate);
+            if (endDate) logs = logs.filter(l => l.date <= endDate);
+            if (studentId) logs = logs.filter(l => l.studentId === studentId);
+
+            if (logs.length === 0) {
+                output.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs">Nenhum registro encontrado para o período/filtro selecionado.</div>`;
+                return;
+            }
+
+            // Group by student summary
+            let summary = {};
+            state.students.forEach(s => {
+                if (!studentId || s.id === studentId) {
+                    summary[s.id] = { name: s.name, category: s.category, belt: s.belt, present: 0, totalClasses: 0 };
+                }
+            });
+
+            logs.forEach(l => {
+                if (summary[l.studentId]) {
+                    summary[l.studentId].totalClasses++;
+                    if (l.status === 'Presente') {
+                        summary[l.studentId].present++;
+                    }
+                }
+            });
+
+            output.innerHTML = `
+                <div class="print-only text-slate-900 mb-4 pb-2 border-b border-slate-300">
+                    <h2 class="text-lg font-bold">Relatório de Frequência - Jiu-Jitsu</h2>
+                    <p class="text-xs">Período: ${startDate || 'Início'} até ${endDate || 'Hoje'}</p>
+                </div>
+                <div class="space-y-3">
+                    <h3 class="font-bold text-xs text-amber-400 no-print uppercase tracking-wider">Resumo de Presença</h3>
+                    <div class="divide-y divide-slate-800 space-y-2">
+                        ${Object.values(summary).map(st => `
+                            <div class="pt-2 flex items-center justify-between text-xs">
+                                <div>
+                                    <span class="font-bold text-slate-200 block">${st.name}</span>
+                                    <span class="text-slate-400">${st.category} • Faixa ${st.belt}</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-bold text-emerald-400">${st.present} presença(s)</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function printReport() {
+            window.print();
+        }
+
+        // Initialize App on Load
+        window.onload = function() {
+            switchTab('lancar');
+        };
+    </script>
+</body>
+</html>
